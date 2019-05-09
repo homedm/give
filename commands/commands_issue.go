@@ -1,12 +1,9 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/google/go-github/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 )
 
 var (
@@ -23,22 +20,26 @@ func issueCommand(cmd *cobra.Command, args []string) {
 }
 
 func issueAction() (err error) {
-	// execution body
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: usr.Token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
+	// list repository issue for the authenticated user
+	owner, err := getGitRepoOwner()
+	if err != nil {
+		return err
+	}
 
-	client := github.NewClient(tc)
-	// list all repository for the authenticated user
-	repos, _, err := client.Repositories.List(ctx, "", nil)
+	repoName, err := getGitRepoName()
+	if err != nil {
+		return err
+	}
+
+	issues, _, err := client.Issues.ListByRepo(ctx, owner, repoName, nil)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Errorf("Error: can not get list all repositories")
-		return
+		return fmt.Errorf("Error: can not get list all repositories")
 	}
-	fmt.Println(repos)
+
+	for i, issue := range issues {
+		fmt.Printf("%d\t%s\t%s\n", *issue.Number, *issue.Labels[i].Name, *issue.Title)
+	}
 	return nil
 }
 

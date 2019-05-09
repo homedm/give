@@ -1,12 +1,16 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
+	"github.com/google/go-github/github"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -19,21 +23,11 @@ var (
 	}
 )
 
-// User is your github account information
-type User struct {
-	Token string
-	Name  string
-}
-
-// Repo is repository information
-type Repo struct {
-	Owner string
-	URL   string
-}
-
 var (
-	usr  User
-	repo Repo
+	ctx    = context.Background()
+	client *github.Client
+
+	pattern = regexp.MustCompile(`^(?:(?:ssh://)?git@github\.com(?::|/)|https://github\.com/)([^/]+)/([^/]+?)(?:\.git)?$`)
 )
 
 // Run runs command.
@@ -63,6 +57,41 @@ func getGitUsrToken() (token string, err error) {
 	return getGitConfig("give.token")
 }
 
+func getGitRepoOwner() (owner string, err error) {
+	url, err := getGitRepoURL()
+	if err != nil {
+		return "", nil
+	}
+
+	matches := pattern.FindStringSubmatch(url)
+	if len(matches) != 3 {
+		return "", fmt.Errorf("can not parse remote.origin.url")
+	}
+
+	owner = matches[1]
+	return
+}
+
+func getGitRepoName() (name string, err error) {
+	url, err := getGitRepoURL()
+	if err != nil {
+		return "", nil
+	}
+
+	matches := pattern.FindStringSubmatch(url)
+	if len(matches) != 3 {
+		err = fmt.Errorf("can not parse remote.origin.url")
+		return
+	}
+
+	name = matches[2]
+	return
+}
+
+func getGitRepoURL() (url string, err error) {
+	return getGitConfig("remote.origin.url")
+}
+
 func getGitConfig(opt string) (out string, err error) {
 	cmd := exec.Command("git", "config", opt)
 	result, err := cmd.Output()
@@ -77,12 +106,14 @@ func checkAPILimit() error {
 }
 
 func init() {
-	// get user information
-	var err error
-	usr.Token, err = getGitUsrToken()
+	token, err := getGitUsrToken()
 	if err != nil {
-		fmt.Errorf("Error: can not get user token")
+		return
 	}
 
-	fmt.Println("initialization finished")
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client = github.NewClient(tc)
 }
