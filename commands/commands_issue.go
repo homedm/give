@@ -6,11 +6,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type options struct {
+	num int
+}
+
 var (
 	issueCmd = &cobra.Command{
-		Use: "issue",
-		Run: issueCommand,
+		Use:   "issue",
+		Short: "Option about GitHub issue viewer",
+		Run:   issueCommand,
 	}
+	opt = &options{}
 )
 
 func issueCommand(cmd *cobra.Command, args []string) {
@@ -38,6 +44,9 @@ func issueAction() (err error) {
 	}
 
 	for i, issue := range issues {
+		if i > opt.num-1 {
+			return nil
+		}
 		fmt.Printf("%d\t%s\t%s\n", *issue.Number, *issue.Labels[i].Name, *issue.Title)
 	}
 	return nil
@@ -45,4 +54,5 @@ func issueAction() (err error) {
 
 func init() {
 	RootCmd.AddCommand(issueCmd)
+	issueCmd.Flags().IntVarP(&opt.num, "num", "i", 0, "string option")
 }

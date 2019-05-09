@@ -16,7 +16,8 @@ import (
 var (
 	// RootCmd defines root command
 	RootCmd = &cobra.Command{
-		Use: "give",
+		Use:   "give",
+		Short: "GitHub Viewer command",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Usage()
 		},
