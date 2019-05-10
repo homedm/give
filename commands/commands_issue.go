@@ -47,12 +47,13 @@ func issueAction() (err error) {
 		if i > opt.num-1 {
 			return nil
 		}
-		fmt.Printf("%d\t%s\t%s\n", *issue.Number, *issue.Labels[i].Name, *issue.Title)
+		// Labelがissueについて無い場合
+		fmt.Printf("#%d\tUpdated:%s\t%s\n", *issue.Number, (*issue.UpdatedAt).Format("2006/01/02/"), *issue.Title)
 	}
 	return nil
 }
 
 func init() {
 	RootCmd.AddCommand(issueCmd)
-	issueCmd.Flags().IntVarP(&opt.num, "num", "i", 0, "string option")
+	issueCmd.Flags().IntVarP(&opt.num, "num", "n", 10, "integer option")
 }
