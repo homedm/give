@@ -93,16 +93,24 @@ func getGitRepoURL() (url string, err error) {
 	return getGitConfig("remote.origin.url")
 }
 
+func getGitEditor() (editor string, err error) {
+	return getGitConfig("core.editor")
+}
+
 func getGitConfig(opt string) (out string, err error) {
 	cmd := exec.Command("git", "config", opt)
 	result, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("Error: %s", cmd)
+		return "", err
 	}
 	return strings.TrimSpace(string(result)), err
 }
 
-func checkAPILimit() error {
+func checkAPILimit(usr string) error {
+	_, _, err := client.Repositories.List(ctx, usr, nil)
+	if _, ok := err.(*github.RateLimitError); ok {
+		return fmt.Errorf("hit rate limit: %s", err)
+	}
 	return nil
 }
 
