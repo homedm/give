@@ -11,9 +11,10 @@ import (
 )
 
 type options struct {
-	num  int
-	show int
-	add  string
+	num   int
+	show  int
+	close int
+	add   string
 }
 
 var (
@@ -44,6 +45,10 @@ func issueAction() (err error) {
 
 	if opt.add != "" {
 		makeIssue(owner, repoName)
+		return
+	}
+	if opt.close != 0 {
+		closeIssue(owner, repoName)
 		return
 	}
 	printIssue(owner, repoName)
@@ -102,6 +107,15 @@ func makeIssue(owner string, repoName string) error {
 	return nil
 }
 
+func closeIssue(owner string, repoName string) error {
+	state := "close"
+	request := &github.IssueRequest{
+		State: &state,
+	}
+	client.Issues.Edit(ctx, owner, repoName, opt.close, request)
+	return nil
+}
+
 func printIssue(owner string, repoName string) error {
 	// get issue list
 	issues, _, err := client.Issues.ListByRepo(ctx, owner, repoName, nil)
@@ -147,6 +161,7 @@ func printIssue(owner string, repoName string) error {
 func init() {
 	RootCmd.AddCommand(issueCmd)
 	issueCmd.Flags().IntVarP(&opt.num, "num", "n", 10, "integer option, the number to display")
-	issueCmd.Flags().IntVarP(&opt.show, "show", "s", 0, "integer option, issue number")
+	issueCmd.Flags().IntVarP(&opt.show, "show", "s", 0, "integer option, issue number to show")
 	issueCmd.Flags().StringVarP(&opt.add, "add", "a", "", "string option, issue title")
+	issueCmd.Flags().IntVarP(&opt.close, "close", "c", 0, "interger option, issue number to delete")
 }
